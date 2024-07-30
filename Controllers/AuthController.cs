@@ -1,5 +1,7 @@
 // Controllers/AuthController.cs
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyPortfolioBackend.Data;
@@ -8,6 +10,7 @@ using MyPortfolioBackend.Services;
 
 namespace MyPortfolioBackend.Controllers
 {
+  [EnableCors("MyAllowedOrigins")]
   [ApiController]
   [Route("api/[controller]")]
   public class AuthController : ControllerBase
@@ -21,11 +24,33 @@ namespace MyPortfolioBackend.Controllers
       _jwtService = jwtService;
     }
 
+    [HttpGet("me")]
     [Authorize]
-    [HttpGet("protected")]
-    public IActionResult Protected()
+    public async Task<IActionResult> GetUserData()
     {
-      return Ok("This is a protected endpoint");
+      // The [Authorize] attribute will ensure a 401 is returned if there's no valid token
+
+      var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+      var userEmail = User.FindFirstValue(ClaimTypes.Email);
+      var userName = User.FindFirstValue(ClaimTypes.Name);
+
+      if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userEmail) || string.IsNullOrEmpty(userName))
+      {
+        return Unauthorized("Invalid token");
+      }
+
+      var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == int.Parse(userId));
+
+      if (user == null)
+      {
+        return NotFound("User not found");
+      }
+
+      return Ok(new
+      {
+        Email = userEmail,
+        Username = userName
+      });
     }
 
     [HttpPost("register")]
@@ -61,6 +86,15 @@ namespace MyPortfolioBackend.Controllers
       }
 
       var token = _jwtService.GenerateToken(user);
+
+      Response.Cookies.Append("token", token, new CookieOptions
+      {
+        HttpOnly = true,
+        Secure = true, // for HTTPS
+        SameSite = SameSiteMode.Strict,
+        Expires = DateTime.UtcNow.AddDays(1) // Set to expire in 1 day
+      });
+
       return Ok(new
       {
         message = "Login successful",
@@ -68,6 +102,19 @@ namespace MyPortfolioBackend.Controllers
         email = user.Email,
         token
       });
+    }
+
+    [HttpPost("logout")]
+    public IActionResult Logout()
+    {
+      Response.Cookies.Delete("token", new CookieOptions
+      {
+        HttpOnly = true,
+        Secure = true,
+        SameSite = SameSiteMode.Strict
+      });
+
+      return Ok(new { message = "Logged out successfully" });
     }
 
     private string HashPassword(string password)

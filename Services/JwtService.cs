@@ -35,7 +35,7 @@ namespace MyPortfolioBackend.Services
           issuer: _issuer,
           audience: _audience,
           claims: claims,
-          expires: DateTime.Now.AddMinutes(15),
+          expires: DateTime.Now.AddDays(1),
           signingCredentials: credentials);
 
       return new JwtSecurityTokenHandler().WriteToken(token);
