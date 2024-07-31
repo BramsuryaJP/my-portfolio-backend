@@ -1,8 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using MyPortfolioBackend.Models;
-using System;
-using BCrypt.Net;
 
 namespace MyPortfolioBackend.Data
 {
@@ -17,6 +14,7 @@ namespace MyPortfolioBackend.Data
     }
 
     public DbSet<User> Users { get; set; }
+    public DbSet<Skill> Skills { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
