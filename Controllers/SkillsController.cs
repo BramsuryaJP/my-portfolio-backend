@@ -27,6 +27,35 @@ namespace MyPortfolioBackend.Controllers
       return Ok(new { data = skills });
     }
 
+    [HttpGet("paged")]
+    public async Task<ActionResult<IEnumerable<Skill>>> GetPagedSkills([FromQuery] int page = 1, [FromQuery] int limit = 10)
+    {
+      if (page < 1 || limit < 1)
+      {
+        return BadRequest(new { message = "Invalid page or limit. Both must be greater than 0." });
+      }
+
+      var totalCount = await _context.Skills.CountAsync();
+      var totalPages = (int)Math.Ceiling((double)totalCount / limit);
+
+      var skills = await _context.Skills
+          .OrderByDescending(skill => skill.Id)
+          .Skip((page - 1) * limit)
+          .Take(limit)
+          .ToListAsync();
+
+      var response = new
+      {
+        data = skills,
+        currentPage = page,
+        limit,
+        totalCount,
+        totalPages
+      };
+
+      return Ok(response);
+    }
+
     [Authorize]
     [HttpPost]
     public async Task<ActionResult<Skill>> CreateSkill(CreateSkillDto createSkillDto)
