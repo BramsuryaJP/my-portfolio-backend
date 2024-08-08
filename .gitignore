@@ -12,6 +12,9 @@ appsettings.json
 # Optionally, ignore the migrations if it contains sensitive info
 Migrations/
 
+# Ignore Uploads folder
+Uploads/
+
 # Visual Studio files
 .vs/
 *.user

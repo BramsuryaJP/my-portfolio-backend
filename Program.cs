@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MyPortfolioBackend.Data;
@@ -26,6 +27,12 @@ builder.Services.AddSwaggerGen(options =>
   });
 
   options.OperationFilter<SecurityRequirementsOperationFilter>();
+
+  options.MapType<List<string>>(() => new OpenApiSchema
+  {
+    Type = "array",
+    Items = new OpenApiSchema { Type = "string" }
+  });
 });
 
 builder.Services.AddScoped<JwtService>();
@@ -42,7 +49,7 @@ builder.Services.AddCors(options =>
   options.AddPolicy("MyAllowedOrigins",
       policy =>
       {
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins("http://localhost:3000", "http://localhost:3001", "http://localhost:3002")
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowCredentials();
@@ -102,11 +109,12 @@ if (app.Environment.IsDevelopment())
 
 // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
+app.UseCors("MyAllowedOrigins");
 app.Use(async (context, next) =>
 {
   if (context.Request.Method == "OPTIONS")
   {
-    context.Response.Headers.Add("Access-Control-Allow-Origin", "http://localhost:3000");
+    context.Response.Headers.Add("Access-Control-Allow-Origin", "http://localhost:3000, http://localhost:3001, http://localhost:3002");
     context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization");
     context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     context.Response.Headers.Add("Access-Control-Allow-Credentials", "true");
@@ -116,7 +124,6 @@ app.Use(async (context, next) =>
 
   await next();
 });
-app.UseCors("MyAllowedOrigins");
 app.Use(async (context, next) =>
 {
   var token = context.Request.Cookies["token"];
@@ -128,6 +135,20 @@ app.Use(async (context, next) =>
 });
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Create Uploads directory if it doesn't exist
+var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "Uploads");
+if (!Directory.Exists(uploadsPath))
+{
+  Directory.CreateDirectory(uploadsPath);
+}
+
+// Add this line to serve static files
+app.UseStaticFiles(new StaticFileOptions
+{
+  FileProvider = new PhysicalFileProvider(uploadsPath),
+  RequestPath = "/uploads"
+});
 
 app.MapControllers();
 
