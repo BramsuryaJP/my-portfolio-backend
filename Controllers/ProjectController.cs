@@ -83,7 +83,8 @@ namespace MyPortfolioBackend.Controllers
       var project = new Project
       {
         Name = createProjectDto.Name,
-        Description = createProjectDto.Description,
+        DescriptionEn = createProjectDto.DescriptionEn,
+        DescriptionIna = createProjectDto.DescriptionIna,
         Tags = createProjectDto.Tags ?? new List<string>()
       };
 
@@ -120,7 +121,8 @@ namespace MyPortfolioBackend.Controllers
       }
 
       existingProject.Name = updateProjectDto.Name ?? existingProject.Name;
-      existingProject.Description = updateProjectDto.Description ?? existingProject.Description;
+      existingProject.DescriptionEn = updateProjectDto.DescriptionEn ?? existingProject.DescriptionEn;
+      existingProject.DescriptionIna = updateProjectDto.DescriptionIna ?? existingProject.DescriptionIna;
       existingProject.Tags = updateProjectDto.Tags ?? existingProject.Tags;
 
       if (updateProjectDto.Image != null)
@@ -276,7 +278,8 @@ namespace MyPortfolioBackend.Controllers
   public class CreateProjectDto
   {
     public required string Name { get; set; }
-    public string? Description { get; set; }
+    public string? DescriptionEn { get; set; }
+    public string? DescriptionIna { get; set; }
     public List<string>? Tags { get; set; }
     public IFormFile? Image { get; set; }
   }
@@ -284,7 +287,8 @@ namespace MyPortfolioBackend.Controllers
   public class UpdateProjectDto
   {
     public string? Name { get; set; }
-    public string? Description { get; set; }
+    public string? DescriptionEn { get; set; }
+    public string? DescriptionIna { get; set; }
     public List<string>? Tags { get; set; }
     public IFormFile? Image { get; set; }
   }
