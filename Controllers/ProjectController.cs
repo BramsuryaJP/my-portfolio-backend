@@ -88,11 +88,6 @@ namespace MyPortfolioBackend.Controllers
         Tags = createProjectDto.Tags ?? new List<string>()
       };
 
-      if (createProjectDto.Image != null)
-      {
-        project.Image = await SaveImage(createProjectDto.Image);
-      }
-
       _context.Projects.Add(project);
       await _context.SaveChangesAsync();
 
@@ -124,16 +119,6 @@ namespace MyPortfolioBackend.Controllers
       existingProject.DescriptionEn = updateProjectDto.DescriptionEn ?? existingProject.DescriptionEn;
       existingProject.DescriptionIna = updateProjectDto.DescriptionIna ?? existingProject.DescriptionIna;
       existingProject.Tags = updateProjectDto.Tags ?? existingProject.Tags;
-
-      if (updateProjectDto.Image != null)
-      {
-        if (!string.IsNullOrEmpty(existingProject.Image))
-        {
-          DeleteImage(existingProject.Image);
-        }
-        var imagePath = await SaveImage(updateProjectDto.Image);
-        existingProject.Image = imagePath;
-      }
 
       try
       {
@@ -175,11 +160,6 @@ namespace MyPortfolioBackend.Controllers
         return NotFound();
       }
 
-      if (!string.IsNullOrEmpty(project.Image))
-      {
-        DeleteImage(project.Image);
-      }
-
       _context.Projects.Remove(project);
       await _context.SaveChangesAsync();
 
@@ -215,14 +195,6 @@ namespace MyPortfolioBackend.Controllers
         return NotFound(new { message = "No projects found with the provided IDs" });
       }
 
-      foreach (var project in projectsToDelete)
-      {
-        if (!string.IsNullOrEmpty(project.Image))
-        {
-          DeleteImage(project.Image);
-        }
-      }
-
       _context.Projects.RemoveRange(projectsToDelete);
       await _context.SaveChangesAsync();
 
@@ -238,41 +210,6 @@ namespace MyPortfolioBackend.Controllers
     {
       return _context.Projects.Any(e => e.Id == id);
     }
-
-    private async Task<string> SaveImage(IFormFile image)
-    {
-      var uploadsFolder = Path.Combine(_environment.ContentRootPath, "Uploads", "Projects");
-      if (!Directory.Exists(uploadsFolder))
-      {
-        Directory.CreateDirectory(uploadsFolder);
-      }
-
-      var uniqueFileName = Guid.NewGuid().ToString() + "_" + image.FileName;
-      var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-      using (var fileStream = new FileStream(filePath, FileMode.Create))
-      {
-        await image.CopyToAsync(fileStream);
-      }
-
-      return $"/uploads/Projects/{uniqueFileName}"; // Return the relative path
-    }
-
-    private void DeleteImage(string imagePath)
-    {
-      if (string.IsNullOrEmpty(imagePath))
-      {
-        return; // Exit the method if imagePath is null or empty
-      }
-
-      var uploadsFolder = Path.Combine(_environment.ContentRootPath, "Uploads", "Projects");
-      var fullPath = Path.Combine(uploadsFolder, Path.GetFileName(imagePath));
-
-      if (System.IO.File.Exists(fullPath))
-      {
-        System.IO.File.Delete(fullPath);
-      }
-    }
   }
 
   public class CreateProjectDto
@@ -281,7 +218,6 @@ namespace MyPortfolioBackend.Controllers
     public string? DescriptionEn { get; set; }
     public string? DescriptionIna { get; set; }
     public List<string>? Tags { get; set; }
-    public IFormFile? Image { get; set; }
   }
 
   public class UpdateProjectDto
@@ -290,6 +226,5 @@ namespace MyPortfolioBackend.Controllers
     public string? DescriptionEn { get; set; }
     public string? DescriptionIna { get; set; }
     public List<string>? Tags { get; set; }
-    public IFormFile? Image { get; set; }
   }
 }
